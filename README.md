@@ -3,11 +3,18 @@
 Compile templates to javascript function to further use in virtual dom.
 
 ~~~ javascript
-  let template = `<template>\n\t<div>\n\n\t</div>\n</template>`
+import compiler from 'tempalte-compiler'
 
-    let ast = compiler.compile(defaultTemplate);
+let template = 
+`<template>
+  <div id="App">
 
-    let code = compiler.compileToFunctions(defaultTemplate);
+  </div>
+</template>`
 
-    console.log('Code', code);
+let ast = compiler.compile(defaultTemplate);
+
+let code = compiler.compileToFunctions(defaultTemplate);
+
+console.log('Code', code);
 ~~~
