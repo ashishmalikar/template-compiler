@@ -1,19 +1,27 @@
 {
-  "name": "template-compiler",
-  "version": "1.0.0",
-  "description": "",
+  "name": "ajna-template-compiler",
+  "version": "1.0.1",
+  "description": "Compile templates to javascript function to further use in virtual dom.",
   "main": "index.js",
   "scripts": {
     "test": "mocha src/test/test.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "de-indent": "^1.0.2",
     "he": "^1.2.0"
   },
   "devDependencies": {
     "mocha": "^8.2.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashishmalikar/template-compiler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ashishmalikar/template-compiler/issues"
+  },
+  "homepage": "https://github.com/ashishmalikar/template-compiler#readme"
 }
