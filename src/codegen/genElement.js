@@ -173,10 +173,7 @@ function genData$2 (el, state) {
   if (el.scopedSlots) {
     data += (genScopedSlots(el, el.scopedSlots, state)) + ",";
   }
-  // component v-model
-  if (el.model) {
-    data += "model:{value:" + (el.model.value) + ",callback:" + (el.model.callback) + ",expression:" + (el.model.expression) + "},";
-  }
+
   // inline-template
   if (el.inlineTemplate) {
     var inlineTemplate = genInlineTemplate(el, state);
@@ -300,6 +297,9 @@ function genHandlers (
   var dynamicHandlers = "";
   for (var name in events) {
     var handlerCode = genHandler(events[name]);
+
+    handlerCode = "this."+handlerCode;
+
     if (events[name] && events[name].dynamic) {
       dynamicHandlers += name + "," + handlerCode + ",";
     } else {

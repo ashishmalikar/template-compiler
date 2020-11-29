@@ -8,9 +8,37 @@ import {
   argRE
  } from '../shared/RE';
 
- import parseFilters from '../shared/parseFilter'
+ import {parseFilters} from '../shared/parseFilter';
+import makeMap from '../shared/makeMap';
+
+ // attributes that should be using props for binding
+var acceptValue = makeMap('input,textarea,option,select,progress');
+
+ var mustUseProp = function (tag, type, attr) {
+  return (
+    (attr === 'value' && acceptValue(tag)) && type !== 'button' ||
+    (attr === 'selected' && tag === 'option') ||
+    (attr === 'checked' && tag === 'input') ||
+    (attr === 'muted' && tag === 'video')
+  )
+};
 
 let delimiters;
+
+function rangeSetItem (
+  item,
+  range
+) {
+  if (range) {
+    if (range.start != null) {
+      item.start = range.start;
+    }
+    if (range.end != null) {
+      item.end = range.end;
+    }
+  }
+  return item
+}
 
 function addAttr (el, name, value, range, dynamic) {
   var attrs = dynamic
@@ -21,10 +49,16 @@ function addAttr (el, name, value, range, dynamic) {
 }
 
 export function processAttrs (el) {
+
+  let platformMustUseProp = mustUseProp;
+
   var list = el.attrsList;
   var i, l, name, rawName, value, modifiers, syncGen, isDynamic;
   for (i = 0, l = list.length; i < l; i++) {
     name = rawName = list[i].name;
+
+    console.log('Name: ', name)
+
     value = list[i].value;
     if (dirRE.test(name)) {
 
@@ -104,7 +138,7 @@ export function processAttrs (el) {
         } else {
           addAttr(el, name, value, list[i], isDynamic);
         }
-      } else if (onRE.test(name)) { // v-on
+      } else if (onRE.test(name)) { // on
         name = name.replace(onRE, '');
         isDynamic = dynamicArgRE.test(name);
         if (isDynamic) {
@@ -281,6 +315,8 @@ function addHandler (
   }
 
   var newHandler = rangeSetItem({ value: value.trim(), dynamic: dynamic }, range);
+
+  console.log("ne handler: ", newHandler)
 
   if (modifiers !== emptyObject) {
     newHandler.modifiers = modifiers;
