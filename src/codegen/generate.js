@@ -6,10 +6,12 @@ export default function generate (
   options
 ) {
   var state = new CodegenState(options);
-  var code = ast ? genElement(ast, state) : '_c("div")';
+
+  var code = ast ? genElement(ast, state) : '$api._c("div")';
+
 
   return {
-    render: ("with(this){return " + code + "}"),
+    render: ("return " + code + ";"),
     staticRenderFns: state.staticRenderFns
   }
 }

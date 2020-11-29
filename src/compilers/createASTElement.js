@@ -1,6 +1,3 @@
-
-
-
 function makeAttrsMap (attrs) {
   var map = {};
   for (var i = 0, l = attrs.length; i < l; i++) {

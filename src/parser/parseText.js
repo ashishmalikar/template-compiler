@@ -1,3 +1,4 @@
+import { parseFilters } from '../shared/parseFilter';
 import { defaultTagRE } from '../shared/RE'
 
 export function parseText (
@@ -24,7 +25,9 @@ export function parseText (
     }
     // tag token
     var exp = parseFilters(match[1].trim());
-    tokens.push(("_s(" + exp + ")"));
+    
+    tokens.push(("$api._s(" + exp + " || this."+exp+")"));
+
     rawTokens.push({ '@binding': exp });
     lastIndex = index + match[0].length;
   }

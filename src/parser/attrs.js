@@ -176,7 +176,7 @@ function parseText (
     }
     // tag token
     var exp = parseFilters(match[1].trim());
-    tokens.push(("_s(" + exp + ")"));
+    tokens.push(("$api._s(" + exp + ")"));
     rawTokens.push({ '@binding': exp });
     lastIndex = index + match[0].length;
   }
@@ -281,8 +281,6 @@ function addHandler (
   }
 
   var newHandler = rangeSetItem({ value: value.trim(), dynamic: dynamic }, range);
-
-  console.log('new handler: ', newHandler)
 
   if (modifiers !== emptyObject) {
     newHandler.modifiers = modifiers;

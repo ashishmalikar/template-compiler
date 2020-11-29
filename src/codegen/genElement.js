@@ -1,6 +1,44 @@
-import {simplePathRE, fnExpRE, fnInvokeRE} from '../shared/RE'
+import {simplePathRE, fnExpRE, fnInvokeRE} from '../shared/RE';
+
+function genIf (
+  el,
+  state,
+  altGen,
+  altEmpty
+) {
+  el.ifProcessed = true; // avoid recursion
+  return genIfConditions(el.ifConditions.slice(), state, altGen, altEmpty)
+}
+
+function genIfConditions (
+  conditions,
+  state,
+  altGen,
+  altEmpty
+) {
+  if (!conditions.length) {
+    return altEmpty || '$api._e()'
+  }
+
+  var condition = conditions.shift();
+  if (condition.exp) {
+    return ("(" + (condition.exp) + ")?" + (genTernaryExp(condition.block)) + ":" + (genIfConditions(conditions, state, altGen, altEmpty)))
+  } else {
+    return ("" + (genTernaryExp(condition.block)))
+  }
+
+  // if-true with is-once should generate code like (a)?_m(0):_m(1)
+  function genTernaryExp (el) {
+    return altGen
+      ? altGen(el, state)
+      : el.once
+        ? genOnce(el, state)
+        : genElement(el, state)
+  }
+}
 
 export default function genElement (el, state) {
+
   if (el.parent) {
     el.pre = el.pre || el.parent.pre;
   }
@@ -23,8 +61,6 @@ export default function genElement (el, state) {
     if (el.component) {
       code = genComponent(el.component, el, state);
 
-      console.log("Code: ", code)
-
     } else {
       var data;
       if (!el.plain || (el.pre && state.maybeComponent(el))) {
@@ -32,7 +68,7 @@ export default function genElement (el, state) {
       }
 
       var children = el.inlineTemplate ? null : genChildren(el, state, true);
-      code = "_c('" + (el.tag) + "'" + (data ? ("," + data) : '') + (children ? ("," + children) : '') + ")";
+      code = "$api._c('" + (el.tag) + "'" + (data ? ("," + data) : '') + (children ? ("," + children) : '') + ")";
     }
     // module transforms
     for (var i = 0; i < state.transforms.length; i++) {
@@ -153,7 +189,7 @@ function genData$2 (el, state) {
   // v-bind with dynamic arguments must be applied using the same v-bind object
   // merge helper so that class/style/mustUseProp attrs are handled correctly.
   if (el.dynamicAttrs) {
-    data = "_b(" + data + ",\"" + (el.tag) + "\"," + (genProps(el.dynamicAttrs)) + ")";
+    data = "$api._b(" + data + ",\"" + (el.tag) + "\"," + (genProps(el.dynamicAttrs)) + ")";
   }
   // v-bind data wrap
   if (el.wrapData) {
@@ -204,7 +240,7 @@ function genProps (props) {
   }
   staticProps = "{" + (staticProps.slice(0, -1)) + "}";
   if (dynamicProps) {
-    return ("_d(" + staticProps + ",[" + (dynamicProps.slice(0, -1)) + "])")
+    return ("$api._d(" + staticProps + ",[" + (dynamicProps.slice(0, -1)) + "])")
   } else {
     return staticProps
   }
@@ -250,7 +286,7 @@ function genText (text) {
 
   text.text = text.text.trim();
 
-  return ("_v(" + (text.type === 2
+  return ("$api._v(" + (text.type === 2
     ? text.expression // no need for () because already wrapped in _s()
     : transformSpecialNewlines(JSON.stringify(text.text))) + ")")
 }
@@ -272,7 +308,7 @@ function genHandlers (
   }
   staticHandlers = "{" + (staticHandlers.slice(0, -1)) + "}";
   if (dynamicHandlers) {
-    return prefix + "_d(" + staticHandlers + ",[" + (dynamicHandlers.slice(0, -1)) + "])"
+    return prefix + "$api._d(" + staticHandlers + ",[" + (dynamicHandlers.slice(0, -1)) + "])"
   } else {
     return prefix + staticHandlers
   }
@@ -364,7 +400,7 @@ function genFor (
   }
 
   el.forProcessed = true; // avoid recursion
-  return (altHelper || '_l') + "((" + exp + ")," +
+  return (altHelper || '$api._l') + "((" + "this."+exp + ")," +
     "function(" + alias + iterator1 + iterator2 + "){" +
       "return " + ((altGen || genElement)(el, state)) +
     '})'

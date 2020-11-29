@@ -34,10 +34,14 @@ export default function parseHTML (html, options) {
   var last, lastTag;
 
   while (html) {
+
+    html = html.trim()
+
     last = html;
     // Make sure we're not in a plaintext content element like script/style
     if (!lastTag || !isPlainTextElement(lastTag)) {
       var textEnd = html.indexOf('<');
+
       if (textEnd === 0) {
         // Comment:
         if (comment.test(html)) {

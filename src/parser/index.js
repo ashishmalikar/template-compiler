@@ -12,6 +12,7 @@ import { parseText } from './parseText'
 import getAndRemoveAttr from '../modules/attr/getAndRemoveAttr';
 
 import { processAttrs } from './attrs'
+import { parseFilters } from '../shared/parseFilter';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
@@ -56,22 +57,23 @@ function isForbiddenTag (el) {
 
 
 function processPre (el) {
-  if (getAndRemoveAttr(el, 'v-pre') != null) {
+  if (getAndRemoveAttr(el, 'is-pre') != null) {
     el.pre = true;
   }
 }
 
 function processFor (el) {
   var exp;
-  if ((exp = getAndRemoveAttr(el, 'v-for'))) {
+  if ((exp = getAndRemoveAttr(el, 'for-each'))) {
     var res = parseFor(exp);
+
     if (res) {
       extend(el, res);
     } else if (process.env.NODE_ENV !== 'production') {
-      warn$1(
-        ("Invalid v-for expression: " + exp),
-        el.rawAttrsMap['v-for']
-      );
+      // warn$1(
+      //   ("Invalid v-for expression: " + exp),
+      //   el.rawAttrsMap['v-for']
+      // );
     }
   }
 }
@@ -106,7 +108,8 @@ function extend (to, _from) {
 }
 
 function processIf (el) {
-  var exp = getAndRemoveAttr(el, 'v-if');
+  var exp = getAndRemoveAttr(el, 'if-true');
+
   if (exp) {
     el.if = exp;
     addIfCondition(el, {
@@ -114,12 +117,8 @@ function processIf (el) {
       block: el
     });
   } else {
-    if (getAndRemoveAttr(el, 'v-else') != null) {
+    if (getAndRemoveAttr(el, 'if-false') != null) {
       el.else = true;
-    }
-    var elseif = getAndRemoveAttr(el, 'v-else-if');
-    if (elseif) {
-      el.elseif = elseif;
     }
   }
 }
@@ -132,11 +131,11 @@ function processIfConditions (el, parent) {
       block: el
     });
   } else if (process.env.NODE_ENV !== 'production') {
-    warn$1(
-      "v-" + (el.elseif ? ('else-if="' + el.elseif + '"') : 'else') + " " +
-      "used on element <" + (el.tag) + "> without corresponding v-if.",
-      el.rawAttrsMap[el.elseif ? 'v-else-if' : 'v-else']
-    );
+    // warn$1(
+    //   "v-" + (el.elseif ? ('else-if="' + el.elseif + '"') : 'else') + " " +
+    //   "used on element <" + (el.tag) + "> without corresponding v-if.",
+    //   el.rawAttrsMap[el.elseif ? 'v-else-if' : 'v-else']
+    // );
   }
 }
 
@@ -166,7 +165,7 @@ function addIfCondition (el, condition) {
 }
 
 function processOnce (el) {
-  var once$$1 = getAndRemoveAttr(el, 'v-once');
+  var once$$1 = getAndRemoveAttr(el, 'is-once');
   if (once$$1 != null) {
     el.once = true;
   }
@@ -249,6 +248,7 @@ function getBindingAttr (
     }
   }
 }
+
 
 function processSlotContent (el) {
   var slotScope;
@@ -428,7 +428,7 @@ var no = function (a, b, c) { return false; };
  * @param {*} template 
  * @param {*} options 
  * 
- * Function convert to AST
+ * convert html to AST
  */
 export default function parse (
   template,
@@ -580,6 +580,9 @@ export default function parse (
       }
 
       var element = createASTElement(tag, attrs, currentParent);
+
+      
+
       if (ns) {
         element.ns = ns;
       }
@@ -635,6 +638,7 @@ export default function parse (
         processRawAttrs(element);
       } else if (!element.processed) {
         // structural directives
+
         processFor(element);
         processIf(element);
         processOnce(element);
@@ -642,6 +646,7 @@ export default function parse (
 
       if (!root) {
         root = element;
+
         if (process.env.NODE_ENV !== 'production') {
           checkRootConstraints(root);
         }
