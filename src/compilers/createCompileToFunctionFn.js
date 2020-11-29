@@ -117,7 +117,7 @@ export default function createCompileToFunctionFn (compile) {
 
 function createFunction (code, errors) {
   try {
-    return new Function(code)
+    return new Function('$api',code)
   } catch (err) {
     errors.push({ err: err, code: code });
     return noop
