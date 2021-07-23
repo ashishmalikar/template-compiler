@@ -11,7 +11,7 @@ export default function generate (
 
 
   return {
-    render: ("return " + code + ";"),
+    render: ("return with(this) {" + code + "}"),
     staticRenderFns: state.staticRenderFns
   }
 }
