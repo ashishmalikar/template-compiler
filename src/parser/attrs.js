@@ -56,9 +56,6 @@ export function processAttrs (el) {
   var i, l, name, rawName, value, modifiers, syncGen, isDynamic;
   for (i = 0, l = list.length; i < l; i++) {
     name = rawName = list[i].name;
-
-    console.log('Name: ', name)
-
     value = list[i].value;
     if (dirRE.test(name)) {
 
