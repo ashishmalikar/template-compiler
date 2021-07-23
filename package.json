@@ -1,6 +1,6 @@
 {
   "name": "ajna-template-compiler",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Compile templates to javascript function to further use in virtual dom.",
   "main": "index.js",
   "scripts": {

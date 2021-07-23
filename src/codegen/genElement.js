@@ -37,6 +37,26 @@ function genIfConditions (
   }
 }
 
+  /**
+   * Create a cached version of a pure function.
+   */
+  function cached (fn) {
+    var cache = Object.create(null);
+    return (function cachedFn (str) {
+      var hit = cache[str];
+      return hit || (cache[str] = fn(str))
+    })
+  }
+
+/**
+   * Camelize a hyphen-delimited string.
+   */
+  var camelizeRE = /-(\w)/g;
+  var camelize = cached(function (str) {
+    return str.replace(camelizeRE, function (_, c) { return c ? c.toUpperCase() : ''; })
+  });
+
+
 export default function genElement (el, state) {
 
   if (el.parent) {
@@ -53,9 +73,12 @@ export default function genElement (el, state) {
     return genIf(el, state)
   } else if (el.tag === 'template' && !el.slotTarget && !state.pre) {
     return genChildren(el, state) || 'void 0'
-  } else if (el.tag === 'slot') {
+  } 
+  else if (el.tag === 'slot') {
     return genSlot(el, state)
-  } else {
+  } 
+  else {
+
     // component or element
     var code;
     if (el.component) {
@@ -68,12 +91,15 @@ export default function genElement (el, state) {
       }
 
       var children = el.inlineTemplate ? null : genChildren(el, state, true);
+
       code = "$api._c('" + (el.tag) + "'" + (data ? ("," + data) : '') + (children ? ("," + children) : '') + ")";
     }
+
     // module transforms
     for (var i = 0; i < state.transforms.length; i++) {
       code = state.transforms[i](el, code);
     }
+
     return code
   }
 }
@@ -103,8 +129,40 @@ function genChildren (
       ? getNormalizationType(children, state.maybeComponent)
       : 0;
     var gen = altGenNode || genNode;
-    return ("[" + (children.map(function (c) { return gen(c, state); }).join(',')) + "]" + (normalizationType$1 ? ("," + normalizationType$1) : ''))
+
+    return ("[" + (children.map(function (c) { return gen(c, state); }).join(',')) + "]") //+ (normalizationType$1 ? ("," + normalizationType$1) : ''))
   }
+}
+
+function genSlot (el, state) {
+
+  var slotName = el.slotName || '"default"';
+
+  var children = genChildren(el, state);
+  
+  var res = "$api._t(" + slotName + ", this.innerHTML";
+  
+  // var attrs = el.attrs || el.dynamicAttrs
+  //   ? genProps((el.attrs || []).concat(el.dynamicAttrs || []).map(function (attr) { return ({
+  //       // slot props are camelized
+  //       name: camelize(attr.name),
+  //       value: attr.value,
+  //       dynamic: attr.dynamic
+  //     }); }))
+  //   : null;
+  // var bind$$1 = el.attrsMap['v-bind'];
+  
+  // if ((attrs || bind$$1) && !children) {
+  //   res += ",null";
+  // }
+  
+  // if (attrs) {
+  //   res += "," + attrs;
+  // }
+  // if (bind$$1) {
+  //   res += (attrs ? '' : ',null') + "," + bind$$1;
+  // }
+  return res + ')'
 }
 
 function genNode (node, state) {
@@ -173,7 +231,10 @@ function genData$2 (el, state) {
   if (el.scopedSlots) {
     data += (genScopedSlots(el, el.scopedSlots, state)) + ",";
   }
-
+  // component v-model
+  if (el.model) {
+    data += "model:{value:" + (el.model.value) + ",callback:" + (el.model.callback) + ",expression:" + (el.model.expression) + "},";
+  }
   // inline-template
   if (el.inlineTemplate) {
     var inlineTemplate = genInlineTemplate(el, state);
@@ -224,23 +285,31 @@ function genDirectives (el, state) {
 }
 
 function genProps (props) {
+  
   var staticProps = "";
+  
   var dynamicProps = "";
+  
   for (var i = 0; i < props.length; i++) {
     var prop = props[i];
     var value = transformSpecialNewlines(prop.value);
+
     if (prop.dynamic) {
       dynamicProps += (prop.name) + "," + value + ",";
     } else {
       staticProps += "\"" + (prop.name) + "\":" + value + ",";
     }
+
   }
+  
   staticProps = "{" + (staticProps.slice(0, -1)) + "}";
+  
   if (dynamicProps) {
     return ("$api._d(" + staticProps + ",[" + (dynamicProps.slice(0, -1)) + "])")
   } else {
     return staticProps
   }
+
 }
 function transformSpecialNewlines (text) {
   return text
@@ -297,9 +366,6 @@ function genHandlers (
   var dynamicHandlers = "";
   for (var name in events) {
     var handlerCode = genHandler(events[name]);
-
-    handlerCode = "this."+handlerCode;
-
     if (events[name] && events[name].dynamic) {
       dynamicHandlers += name + "," + handlerCode + ",";
     } else {
@@ -312,6 +378,48 @@ function genHandlers (
   } else {
     return prefix + staticHandlers
   }
+}
+
+var genGuard = function (condition) { return ("if(" + condition + ")return null;"); };
+
+var modifierCode = {
+  stop: '$event.stopPropagation();',
+  prevent: '$event.preventDefault();',
+  self: genGuard("$event.target !== $event.currentTarget"),
+  ctrl: genGuard("!$event.ctrlKey"),
+  shift: genGuard("!$event.shiftKey"),
+  alt: genGuard("!$event.altKey"),
+  meta: genGuard("!$event.metaKey"),
+  left: genGuard("'button' in $event && $event.button !== 0"),
+  middle: genGuard("'button' in $event && $event.button !== 1"),
+  right: genGuard("'button' in $event && $event.button !== 2")
+};
+
+function genKeyFilter (keys) {
+  return (
+    // make sure the key filters only apply to KeyboardEvents
+    // #9441: can't use 'keyCode' in $event because Chrome autofill fires fake
+    // key events that do not have keyCode property...
+    "if(!$event.type.indexOf('key')&&" +
+    (keys.map(genFilterCode).join('&&')) + ")return null;"
+  )
+}
+
+function genFilterCode (key) {
+  var keyVal = parseInt(key, 10);
+  if (keyVal) {
+    return ("$event.keyCode!==" + keyVal)
+  }
+  var keyCode = keyCodes[key];
+  var keyName = keyNames[key];
+  return (
+    "_k($event.keyCode," +
+    (JSON.stringify(key)) + "," +
+    (JSON.stringify(keyCode)) + "," +
+    "$event.key," +
+    "" + (JSON.stringify(keyName)) +
+    ")"
+  )
 }
 
 function genHandler (handler) {
