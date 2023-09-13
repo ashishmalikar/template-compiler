@@ -3,7 +3,7 @@
 Compile templates to javascript function to further use in virtual dom.
 
 ~~~ javascript
-import compiler from 'tempalte-compiler'
+import compiler from 'ajna-template-compiler'
 
 let template = 
 `<template>
